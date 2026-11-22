@@ -12,6 +12,7 @@
 ![macOS](https://img.shields.io/badge/macOS-14%2B-black?logo=apple)
 ![Swift](https://img.shields.io/badge/Swift-SwiftUI-F05138?logo=swift&logoColor=white)
 ![Universal](https://img.shields.io/badge/Apple%20芯片%20%2B%20Intel-通用-blue)
+[![License](https://img.shields.io/badge/许可证-MIT-green)](LICENSE)
 
 </div>
 
@@ -147,3 +148,7 @@ build.sh                       # 构建并打包 .app
 ## 🙏 致谢
 
 交互设计参考了 [Bartender](https://www.macbartender.com)、[Ice](https://github.com/jordanbaird/Ice) 和 [Thaw](https://github.com/thaw-app/Thaw)。
+
+## 📄 许可证
+
+[MIT](LICENSE) © 2026 245678000000
