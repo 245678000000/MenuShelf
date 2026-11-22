@@ -3,7 +3,9 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-swift build -c release
+# 通用二进制：Apple 芯片 + Intel
+swift build -c release --triple arm64-apple-macosx14.0
+swift build -c release --triple x86_64-apple-macosx14.0
 
 if [ ! -f Resources/AppIcon.icns ]; then
   TMP=$(mktemp -d)
@@ -20,7 +22,8 @@ fi
 APP="build/收纳栏.app"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
-cp .build/release/MenuShelf "$APP/Contents/MacOS/"
+lipo -create .build/arm64-apple-macosx/release/MenuShelf .build/x86_64-apple-macosx/release/MenuShelf \
+  -output "$APP/Contents/MacOS/MenuShelf"
 cp Resources/Info.plist "$APP/Contents/"
 cp Resources/AppIcon.icns "$APP/Contents/Resources/"
 codesign --force --deep -s - "$APP" 2>/dev/null
