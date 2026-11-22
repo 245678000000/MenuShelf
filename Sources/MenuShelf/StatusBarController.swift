@@ -10,6 +10,7 @@ final class StatusBarController: ObservableObject {
     @Published private(set) var showingAlways = false
 
     var onOpenSettings: (() -> Void)?
+    var onOpenUpdate: (() -> Void)?
 
     private let prefs: Prefs
     private let toggleItem: NSStatusItem
@@ -167,6 +168,12 @@ final class StatusBarController: ObservableObject {
 
     private func showMenu() {
         let m = NSMenu()
+        if let new = Updater.shared.latest {
+            let item = m.addItem(withTitle: "更新到 \(new.version)…", action: #selector(menuUpdate), keyEquivalent: "")
+            item.target = self
+            item.image = NSImage(systemSymbolName: "arrow.down.circle.fill", accessibilityDescription: nil)
+            m.addItem(.separator())
+        }
         m.addItem(withTitle: isCollapsed ? "展开隐藏项" : "收起隐藏项",
                   action: #selector(menuToggle), keyEquivalent: "").target = self
         if prefs.alwaysHiddenEnabled {
@@ -175,6 +182,7 @@ final class StatusBarController: ObservableObject {
         }
         m.addItem(.separator())
         m.addItem(withTitle: "设置…", action: #selector(menuSettings), keyEquivalent: ",").target = self
+        m.addItem(withTitle: "检查更新…", action: #selector(menuCheckUpdate), keyEquivalent: "").target = self
         m.addItem(.separator())
         m.addItem(withTitle: "退出收纳栏", action: #selector(menuQuit), keyEquivalent: "q").target = self
         toggleItem.menu = m
@@ -185,6 +193,11 @@ final class StatusBarController: ObservableObject {
     @objc private func menuToggle() { toggle() }
     @objc private func menuShowAll() { expand(includeAlways: true) }
     @objc private func menuSettings() { onOpenSettings?() }
+    @objc private func menuUpdate() { onOpenUpdate?() }
+    @objc private func menuCheckUpdate() {
+        Updater.shared.check()
+        onOpenUpdate?()
+    }
     @objc private func menuQuit() { NSApp.terminate(nil) }
 
     // MARK: - 自动隐藏

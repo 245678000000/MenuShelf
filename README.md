@@ -36,7 +36,8 @@
 | 💊 **状态提示** | 触发时在屏幕顶部显示一个玻璃质感的小胶囊 |
 | 👁 **始终隐藏区** | 再加一条 `┆`，放那些几乎不用、又删不掉的图标 |
 | 🎨 **样式** | 分隔线可选竖线 / 圆点 / 隐形，开关图标三种样式，自动适配深浅色 |
-| 🔒 **隐私** | 无需辅助功能权限，不联网，不收集任何数据 |
+| 🔄 **检查更新** | 每天自动检查 GitHub 新版本，一键下载、替换并重启 |
+| 🔒 **隐私** | 无需辅助功能权限，不收集任何数据，仅在检查更新时访问 GitHub |
 
 <p align="center">
   <img src="docs/triggers.png" width="420" alt="触发器">
@@ -54,6 +55,10 @@
    ```
 
 > 系统要求：macOS 14 Sonoma 及以上，Apple 芯片与 Intel 通用。
+
+### 更新
+
+1.1.0 起内置检查更新：发现新版本时屏幕顶部会出现提示，右键 `‹` 选择「更新到 x.y.z…」，或在「设置 → 关于」里点「下载并安装」，App 会自动替换并重启。也可以在「关于」页关闭自动检查。
 
 ## 🚀 使用
 
@@ -131,6 +136,7 @@ Sources/MenuShelf/
 ├── StatusBarController.swift  # 核心：分隔线 / 开关 / 收起与展开
 ├── SettingsView.swift         # SwiftUI 设置界面
 ├── Prefs.swift                # 用户设置（UserDefaults）
+├── Updater.swift              # 检查更新与自动安装（GitHub Releases）
 ├── HotKey.swift               # 全局快捷键（Carbon）
 ├── PowerMonitor.swift         # 电源状态监听（IOKit）
 └── HUD.swift                  # 顶部胶囊提示

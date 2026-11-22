@@ -14,13 +14,19 @@ enum SettingsTab: String, CaseIterable, Identifiable {
     }
 }
 
+/// 让外部（菜单、提示）可以切换设置页
+final class SettingsRouter: ObservableObject {
+    static let shared = SettingsRouter()
+    @Published var tab: SettingsTab = .general
+}
+
 struct SettingsView: View {
     @EnvironmentObject var bar: StatusBarController
     @EnvironmentObject var prefs: Prefs
-    @State private var tab: SettingsTab
+    @ObservedObject private var router = SettingsRouter.shared
     @Namespace private var ns
 
-    init(initialTab: SettingsTab) { _tab = State(initialValue: initialTab) }
+    private var tab: SettingsTab { router.tab }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -76,7 +82,7 @@ struct SettingsView: View {
         HStack(spacing: 4) {
             ForEach(SettingsTab.allCases) { t in
                 Button {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) { tab = t }
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) { router.tab = t }
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: t.icon).font(.system(size: 11, weight: .semibold))
@@ -325,24 +331,157 @@ private struct TriggersTab: View {
 // MARK: - 关于
 
 private struct AboutTab: View {
-    private var version: String {
-        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
-    }
+    @EnvironmentObject var prefs: Prefs
+    @ObservedObject private var updater = Updater.shared
 
     var body: some View {
-        VStack(spacing: 14) {
-            Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 96, height: 96)
-                .shadow(color: .black.opacity(0.25), radius: 16, y: 8)
-            Text("收纳栏").font(.system(size: 24, weight: .bold))
-            Text("版本 \(version)").font(.system(size: 12)).foregroundStyle(.secondary)
-            Text("一个简约的菜单栏收纳工具。\n无需辅助功能权限，不收集任何数据。")
-                .font(.system(size: 13)).multilineTextAlignment(.center).foregroundStyle(.secondary)
-                .padding(.top, 4)
-            Button("退出收纳栏") { NSApp.terminate(nil) }
-                .controlSize(.large)
-                .padding(.top, 10)
+        VStack(spacing: 18) {
+            VStack(spacing: 8) {
+                Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 84, height: 84)
+                    .shadow(color: .black.opacity(0.25), radius: 14, y: 7)
+                Text("收纳栏").font(.system(size: 22, weight: .bold))
+                Text("版本 \(updater.currentVersion)").font(.system(size: 12)).foregroundStyle(.secondary)
+            }
+            .padding(.top, 4)
+
+            Card("软件更新") {
+                Row(icon: statusIcon, tint: statusTint, title: statusTitle, subtitle: statusSubtitle) {
+                    statusAccessory
+                }
+                if case .available(let info) = updater.state {
+                    RowDivider()
+                    ReleaseNotes(info: info)
+                }
+                if case .downloading(let p) = updater.state {
+                    ProgressView(value: p)
+                        .progressViewStyle(.linear)
+                        .padding(.horizontal, 14).padding(.bottom, 12)
+                }
+                RowDivider()
+                Row(icon: "clock.arrow.circlepath", tint: .gray, title: "自动检查更新", subtitle: "每天检查一次") {
+                    Toggle("", isOn: $prefs.autoCheckUpdates).switchStyle()
+                }
+            }
+
+            VStack(spacing: 10) {
+                Text("无需辅助功能权限，不收集任何数据。\n仅在检查更新时访问 GitHub。")
+                    .font(.system(size: 12)).multilineTextAlignment(.center).foregroundStyle(.secondary)
+                HStack(spacing: 10) {
+                    Button("GitHub 主页") {
+                        NSWorkspace.shared.open(URL(string: "https://github.com/\(Updater.repo)")!)
+                    }
+                    Button("退出收纳栏") { NSApp.terminate(nil) }
+                }
+                .controlSize(.regular)
+            }
         }
-        .padding(.top, 30)
+    }
+
+    // MARK: 状态展示
+
+    private var statusTitle: String {
+        switch updater.state {
+        case .idle: return "当前版本 \(updater.currentVersion)"
+        case .checking: return "正在检查更新…"
+        case .upToDate: return "已是最新版本"
+        case .available(let i): return "发现新版本 \(i.version)"
+        case .downloading(let p): return "正在下载… \(Int(p * 100))%"
+        case .installing: return "正在安装，即将重启…"
+        case .failed: return "检查更新失败"
+        }
+    }
+
+    private var statusSubtitle: String? {
+        switch updater.state {
+        case .failed(let msg): return msg
+        case .available: return "当前版本 \(updater.currentVersion)"
+        case .downloading, .installing, .checking: return nil
+        default:
+            guard let d = updater.lastChecked else { return "尚未检查" }
+            let f = RelativeDateTimeFormatter()
+            f.locale = Locale(identifier: "zh_CN")
+            return "上次检查：\(f.localizedString(for: d, relativeTo: Date()))"
+        }
+    }
+
+    private var statusIcon: String {
+        switch updater.state {
+        case .upToDate: return "checkmark"
+        case .available, .downloading, .installing: return "arrow.down"
+        case .failed: return "exclamationmark"
+        default: return "arrow.triangle.2.circlepath"
+        }
+    }
+
+    private var statusTint: Color {
+        switch updater.state {
+        case .upToDate: return .green
+        case .available, .downloading, .installing: return .blue
+        case .failed: return .orange
+        default: return .gray
+        }
+    }
+
+    @ViewBuilder private var statusAccessory: some View {
+        switch updater.state {
+        case .checking, .installing, .downloading:
+            ProgressView().controlSize(.small)
+        case .available(let info):
+            Button {
+                updater.downloadAndInstall()
+            } label: {
+                Label(info.assetURL == nil ? "前往下载" : "下载并安装", systemImage: "arrow.down.circle.fill")
+            }
+            .buttonStyle(.borderedProminent)
+        default:
+            Button("检查更新") { updater.check() }
+        }
+    }
+}
+
+private struct ReleaseNotes: View {
+    let info: ReleaseInfo
+    @ObservedObject private var updater = Updater.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if !info.notes.isEmpty {
+                ScrollView {
+                    Text(Self.render(info.notes))
+                        .font(.system(size: 12))
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                }
+                .frame(maxHeight: 130)
+                .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.primary.opacity(0.04)))
+            }
+            HStack(spacing: 8) {
+                Button("跳过此版本") { updater.skip(info) }
+                Button("在 GitHub 查看") { NSWorkspace.shared.open(info.pageURL) }
+                Spacer()
+            }
+            .controlSize(.regular)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+    }
+
+    /// 简单处理 Markdown：标题转粗体，去掉代码块围栏，其余按行内语法渲染
+    static func render(_ md: String) -> AttributedString {
+        let lines = md.replacingOccurrences(of: "\r\n", with: "\n").components(separatedBy: "\n").compactMap { line -> String? in
+            let t = line.trimmingCharacters(in: .whitespaces)
+            if t.hasPrefix("```") { return nil }
+            if t.hasPrefix("#") {
+                let title = t.drop { $0 == "#" }.trimmingCharacters(in: .whitespaces)
+                return title.isEmpty ? nil : "**\(title)**"
+            }
+            if t.hasPrefix("- ") || t.hasPrefix("* ") { return "•  " + t.dropFirst(2) }
+            return line
+        }
+        let text = lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
+        return (try? AttributedString(markdown: text, options: .init(
+            interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(text)
     }
 }
 

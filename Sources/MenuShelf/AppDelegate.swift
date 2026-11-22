@@ -14,6 +14,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         controller = StatusBarController(prefs: prefs)
         controller.onOpenSettings = { [weak self] in self?.openSettings() }
+        controller.onOpenUpdate = { [weak self] in self?.openSettings(tab: .about) }
+
+        Updater.shared.onUpdateFound = { info in
+            HUD.shared.show("发现新版本 \(info.version)，右键 ‹ 即可更新", symbol: "arrow.down.circle.fill",
+                            tint: .blue, force: true)
+        }
+        Updater.shared.startAutomaticChecks()
 
         HotKey.shared.action = { [weak self] in self?.controller.toggle() }
         registerHotKeyIfNeeded()
@@ -90,9 +97,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - 设置窗口
 
-    func openSettings(tab: SettingsTab = .general) {
+    func openSettings(tab: SettingsTab? = nil) {
+        if let tab { SettingsRouter.shared.tab = tab }
         if settingsWindow == nil {
-            let root = SettingsView(initialTab: tab)
+            let root = SettingsView()
                 .environmentObject(controller)
                 .environmentObject(prefs)
             let host = NSHostingView(rootView: root)

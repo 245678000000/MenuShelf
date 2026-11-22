@@ -20,6 +20,9 @@ final class Prefs: ObservableObject {
     @Published var triggerDisplayExpand: Bool { didSet { d.set(triggerDisplayExpand, forKey: "triggerDisplayExpand") } }
     @Published var showHUD: Bool { didSet { d.set(showHUD, forKey: "showHUD") } }
 
+    @Published var autoCheckUpdates: Bool { didSet { d.set(autoCheckUpdates, forKey: "autoCheckUpdates") } }
+    @Published var skippedVersion: String { didSet { d.set(skippedVersion, forKey: "skippedVersion") } }
+
     @Published private(set) var hotKeyCode: Int
     @Published private(set) var hotKeyModifiers: Int
     @Published private(set) var hotKeyDisplay: String
@@ -37,6 +40,8 @@ final class Prefs: ObservableObject {
             "triggerPlugCollapse": false,
             "triggerDisplayExpand": false,
             "showHUD": true,
+            "autoCheckUpdates": true,
+            "skippedVersion": "",
             "hotKeyCode": 11,            // B
             "hotKeyModifiers": 256 | 2048, // ⌘ + ⌥
             "hotKeyDisplay": "⌥⌘B",
@@ -52,6 +57,8 @@ final class Prefs: ObservableObject {
         triggerPlugCollapse = d.bool(forKey: "triggerPlugCollapse")
         triggerDisplayExpand = d.bool(forKey: "triggerDisplayExpand")
         showHUD = d.bool(forKey: "showHUD")
+        autoCheckUpdates = d.bool(forKey: "autoCheckUpdates")
+        skippedVersion = d.string(forKey: "skippedVersion") ?? ""
         hotKeyCode = d.integer(forKey: "hotKeyCode")
         hotKeyModifiers = d.integer(forKey: "hotKeyModifiers")
         hotKeyDisplay = d.string(forKey: "hotKeyDisplay") ?? ""
