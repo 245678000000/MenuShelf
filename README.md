@@ -20,8 +20,8 @@
 菜单栏图标越装越多，刘海一挡，重要的反而看不见。收纳栏在菜单栏里放一条分隔线 `│`：线左边的图标平时收起来，需要时一点就出来。
 
 <p align="center">
-  <img src="docs/layout.png" width="420" alt="布局">
-  <img src="docs/general.png" width="420" alt="通用设置">
+  <img src="docs/layout.png" width="49%" alt="布局">
+  <img src="docs/general.png" width="49%" alt="通用设置">
 </p>
 
 ## ✨ 功能
@@ -40,8 +40,8 @@
 | 🔒 **隐私** | 无需辅助功能权限，不收集任何数据，仅在检查更新时访问 GitHub |
 
 <p align="center">
-  <img src="docs/triggers.png" width="420" alt="触发器">
-  <img src="docs/about.png" width="420" alt="关于">
+  <img src="docs/triggers.png" width="49%" alt="触发器">
+  <img src="docs/about.png" width="49%" alt="关于">
 </p>
 
 ## 📦 安装
